@@ -1,0 +1,108 @@
+import time 
+import argparse
+import socket
+
+import influxdb_client
+from influxdb_client import InfluxDBClient, Point
+from influxdb_client.client.write_api import SYNCHRONOUS
+
+bucket = "xelab_sc"
+org = "xelab"
+token = "hj0aom10LZKCNnDesgn0QrPCvz2pixID-i90f_RRHmw6rGrh_dL2q9EHKloPFIKUuU-PzzlaWLDI69gyuH2DjA=="
+# Store the URL of your InfluxDB instance
+url="http://localhost:8086"
+
+measurement_name = "first_test"
+
+client = influxdb_client.InfluxDBClient(
+   url=url,
+   token=token,
+   org=org
+)
+
+write_api = client.write_api(write_options=SYNCHRONOUS)
+
+
+class RequestError(Exception):
+    """Custom exception for a wront request to revpi error condition."""
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
+
+
+        
+def split_data_sensor(data):
+    data = data.split("_")
+    return data
+
+def split_name_val(data):
+    res_dict = {}
+    for d in data:
+        split_d = d.split('=')
+        res_dict[split_d[0]] = float(split_d[1])
+    return res_dict
+
+
+
+def push_on_influx(key, val):
+# query_api = client.query_api()
+    print("data = ", key, val)
+    _point1 = Point(measurement_name).tag("sensor",key).field("val",float(val))
+    write_api.write(bucket=bucket, record=[_point1])
+
+
+
+
+time_between_meas = 1  # in second
+
+def main():
+    # Création d'une socket UDP
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    
+    # Configuration de l'adresse et du po
+    port_number = 50000
+#    server_ip_address = '134.158.155.84'
+    server_ip_address = '134.158.153.49'
+    client_ip_address = '134.158.154.84' 
+
+    #    ip_address = '134.158.154.55'
+    server_address = (server_ip_address, port_number)
+    server_socket.bind(server_address)
+
+    client_address = (client_ip_address,port_number)
+    
+    print("UDP Server starting on port: ",port_number, " at address: ", server_ip_address)
+    
+    while True:
+        time.sleep(time_between_meas)
+        try:
+            # Demande de la pression à envoyer au client
+            data_request = 'data_request'
+       
+            # Envoi de la pression demandée au client
+#            server_socket.sendto(data_request.encode('utf-8'), client_address)
+       
+
+            # Attente de réception de données
+            print("Waiting for data...")
+            data, client_address = server_socket.recvfrom(1024)        
+            data = data[:-1] # removes the last byte found to be \x00
+            print("data", data)
+            data = data.decode()            
+                
+            if 'error' in data:
+                raise RequestError("wrong message to RevPi")
+            else:
+                sensor_meas = split_data_sensor(data)
+                sensor_res = split_name_val(sensor_meas)
+                for key, val in sensor_res.items():
+                    push_on_influx(key, val)
+                    
+            print("sensor res:", sensor_res)
+            
+        
+        except Exception as err:
+            print("Error:", err)     
+
+if __name__ == "__main__":
+    main()

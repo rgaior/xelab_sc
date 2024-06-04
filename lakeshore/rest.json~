@@ -1,0 +1,2 @@
+ "RDGST?": "Input Reading Status Query \n Input: RDGST? <input>[term] \n Format: a \n <input> Specifies which input to query: A or B. \n Returned: <status bit weighting>[term] \n Format: nnn \n Remarks: The integer returned represents the sum of the bit weighting of the input status flag bits. A \"000\" response indicates a valid reading is present. \n Bit Bit Weighting Status Indicator \n 
+0 1 invalid reading \n  4 16 temp underrange \n  5 32 temp overrange \n  6 64 sensor units zero \n  7 128 sensor units overrange \n",
