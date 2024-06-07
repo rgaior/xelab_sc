@@ -15,7 +15,10 @@ class SerialInterface(Serial):
         super().__init__(**kwargs)
         print(f'establishing serial connection with: {identifier}')
         if self.port is None:
-            for port in glob('/dev/ttyS*'):
+            port_to_search = glob('/dev/ttyS*')
+            port_to_search += glob('/dev/ttyU*')
+            print("port to search", port_to_search)
+            for port in port_to_search:
                 try:
                     print("port = ", port)
 #                    s = Serial(port, exclusive=True)
@@ -35,6 +38,7 @@ class SerialInterface(Serial):
                         self.port= port
                         break
                     else:
+                        self.close()
                         pass
                 
 #                    self.close()                    

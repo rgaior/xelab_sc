@@ -1,0 +1,45 @@
+import sys
+import os
+import importlib.util
+current = os.path.dirname(os.path.realpath(__file__))
+ 
+# Getting the parent directory name
+# where the current directory is present.
+parent = os.path.dirname(current)
+ 
+# adding the parent directory to 
+# the sys.path.
+sys.path.append(parent)
+# directory reach
+#directory = path.path(__file__).abspath() 
+import db_utils as db_utils
+import time
+
+
+import libABCD
+libABCD.init('dblogger',publisher=True, listener=True, connect=True)
+
+
+revpi_topic = 'sc/gaz/revpi/get'
+lakeshore_topic = 'sc/temp/lakeshore/get'
+measurement = 'test_meas'
+def log_revpi(msg='', topic=revpi_topic):
+    print("------- message from REVPI -------- ")
+    print(msg)
+    db_utils.push_to_influx(measurement, msg, tags={"run":"run_name"})
+
+def log_lakeshore(msg='', topic=lakeshore_topic):
+    print("------- message from LAKESHORE -------- ")
+    print(msg)
+    db_utils.push_to_influx(measurement, msg, tags={"run":"run_name"})
+
+
+    
+libABCD.subscribe(revpi_topic)
+libABCD.subscribe(lakeshore_topic)
+
+libABCD.add_callback(revpi_topic, log_revpi)
+libABCD.add_callback(lakeshore_topic, log_lakeshore)
+
+
+

@@ -1,5 +1,6 @@
 import sys
 import os
+import importlib.util
 current = os.path.dirname(os.path.realpath(__file__))
  
 # Getting the parent directory name
@@ -37,30 +38,41 @@ class RevPi(Instrument):
         super().__init__(name)
         self.protocol = RevPiProtocol()
 
-    def get_data(self, *args):
+#    def get_data(self, *args):
+    def read_data(self, *args):
         data_request = 'data_request'
         
         # Envoi de la pression demandée au client
         self.interface.server_socket.sendto(data_request.encode('utf-8'), self.interface.client_address)
+
+
+
+        # Réception du nombre de chaînes de caractères à recevoir
+        num_strings_data, client_address = self.interface.server_socket.recvfrom(1024)  # Recevoir les données
+        num_strings = int(num_strings_data.decode('utf-8'))  # Convertir en entier
+        print(f"Nombre de chaînes de caractères à recevoir: {num_strings}")
         
-        
-        # Attente de réception de données
-        print("Waiting for data...")
-        data, client_address = self.interface.server_socket.recvfrom(1024)
-        print("data", data)
-        data = data.decode()
-        dict_data = self.protocol.decode_data(data)
-        print(dict_data)
+        for _ in range(num_strings):
+            data, client_address = self.interface.server_socket.recvfrom(1024)            
+            print("data", data)
+            data = data.decode('utf_8')   
+            dict_data = self.protocol.decode_data(data)
+            print(dict_data)
+
+        return dict_data
 
 if __name__ == '__main__':
     name = "revpi"
     revpi = RevPi(name)
-    interface = inter.UDPSocket(name,server_ip = '134.158.153.49', client_ip='134.158.154.84', port_number=50000)
+    interface = inter.UDPSocket(name,server_ip = '134.158.155.84', client_ip='134.158.154.84', port_number=50000)
     revpi.set_interface(interface)
-    data = revpi.get_data()
-    
-    #    revpi.interface.close()
+    revpi.topic = 'sc/gaz/revpi'
+    if importlib.util.find_spec('libABCD'):
+        import libABCD
+        libABCD.init(name)
 
+
+        
 #data = temperature_board.get_data(1,-1)
 
 #print(data)

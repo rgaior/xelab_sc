@@ -8,7 +8,7 @@ class Instrument:
     def __init__(self, name, **kwargs):
         self.name = name
         self.topic =''
-        self.deltat = 1
+        self.deltat = 1 
         self.stop_event= threading.Event()
         self.x = threading.Thread(target=self.continuous_log, args=(self.deltat,), daemon=True)
 
